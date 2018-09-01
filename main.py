@@ -32,7 +32,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'mysecretkey'
-
+origi
 
 class ImageForm(FlaskForm):
     '''
