@@ -5,23 +5,29 @@
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-{%if session['filename'] == ""%}
-<h1>What's in my back yard?</h1>
-<p>Upload a picture of something from your back yard, and Tensorflow will tell you what it is:</p>
-{%else%}
-<h1>Here is the image you uploaded:</h1>
-  <img src="static/{{session['filename']}}">
-  <br>
-  <br>
-Tensorflow thinks you uploaded a picture of a {{session['dlabel']}} with {{session['dresult']}}% certainty.
-Try again?<br><br>
-{%endif%}
-<form  method="POST" enctype="multipart/form-data">
-    {{form.image}}
-   <br><br>
-    {{ form.submit() }}
-</form>
+<div class="container">
+    <div class="jumbotron">
+    <h1>The Garden Spy</h1>
+    {%if session['submitted']  != True%}
+    <p>Upload a picture of something from your back yard, and Tensorflow will tell you what it is:</p>
+    {%else%}
+    <h2>Here is the image you uploaded:</h2>
+      <img src="static/{{session['filename']}}">
+      <br>
+      <br>
+    Tensorflow thinks you uploaded a picture of a {{session['dlabel']}} with {{session['dresult']}}% certainty.
+    Try again?<br><br>
+    {%endif%}
+    <form  method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        {{form.image}}
+       <br><br>
+        {{ form.submit() }}
+    </form>
+    </div>
+</div>
 </body>
 </html>

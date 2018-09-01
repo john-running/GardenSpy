@@ -1,81 +1,79 @@
+'''
+imports and config for image recognition
+'''
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 import argparse
 import sys
 import time
-
 import numpy as np
 import tensorflow as tf
+from PIL import Image   # for image resizing
 
 
-import os
-from flask import Flask, render_template, session, redirect, url_for, flash,request
-from scripts.label_image import load_graph,read_tensor_from_image_file,load_labels
-from flask_wtf import FlaskForm
-from wtforms import (SubmitField,FileField)
-from wtforms.validators import DataRequired
-from werkzeug.utils import secure_filename
-from PIL import Image
-
-#UPLOAD_FOLDER = '/home/sidearmjohnny/mysite/static/'
-UPLOAD_FOLDER = 'static/'
+UPLOAD_FOLDER = '/home/sidearmjohnny/mysite/static/' #remote
+#UPLOAD_FOLDER = 'static/' #local
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
+'''
+imports for web app
+'''
+
+import os #required to save uploaded files
+from flask import Flask, render_template, session, redirect, url_for, flash,request
+from scripts.label_image import load_graph,read_tensor_from_image_file,load_labels,ImageFileRequired
+from flask_wtf import FlaskForm
+from wtforms import (SubmitField,FileField, Form, BooleanField, StringField, validators)
+from wtforms.validators import DataRequired
+from werkzeug.utils import secure_filename
 
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Configure a secret SECRET_KEY
-# We will later learn much better ways to do this!!
 app.config['SECRET_KEY'] = 'mysecretkey'
 
-# Now create a WTForm Class
-# Lots of fields available:
-# http://wtforms.readthedocs.io/en/stable/fields.html
 
-class InfoForm(FlaskForm):
+class ImageForm(FlaskForm):
     '''
     This general class gets a lot of form about puppies.
     Mainly a way to go through many of the WTForms Fields.
     '''
-    image = FileField(u'Image File')
-    submit = SubmitField('Submit')
+    image = FileField('Image File', validators=[DataRequired(), ImageFileRequired()])
 
+    submit = SubmitField('Submit')
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
 
     # Create instance of the form.
-    form = InfoForm()
+    form = ImageForm()
 
-    # If the form is valid on submission (we'll talk about validation next)
-
-
-    if form.is_submitted():
+    if form.validate_on_submit(): # if user submits form
         file = request.files['image']
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        session['filename'] = filename
-        file_name = UPLOAD_FOLDER + filename
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename)) # save original file to the server
+        session['filename'] = filename # store file name in session
+        file_location = UPLOAD_FOLDER + filename
+
         '''
-        resize image here
+        resize image to prepare it for image recognition (expects images that are 224px wide)
         '''
         basewidth = 224
-        img = Image.open(file_name)
+        img = Image.open(file_location)
         wpercent = (basewidth/float(img.size[0]))
         hsize = int((float(img.size[1])*float(wpercent)))
         img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-        img.save(file_name)
+        img.save(file_location)
 
-
-#        model_file = "/home/sidearmjohnny/mysite/tf_files/retrained_graph.pb"
-#        label_file = "/home/sidearmjohnny/mysite/tf_files/retrained_labels.txt"
-        model_file = "tf_files/retrained_graph.pb"
-        label_file = "tf_files/retrained_labels.txt"
-
+        '''
+        image classification from tensorflow for poets code lab example
+        '''
+        model_file = "/home/sidearmjohnny/mysite/tf_files/retrained_graph.pb"  #remote
+        label_file = "/home/sidearmjohnny/mysite/tf_files/retrained_labels.txt" #remote
+#        model_file = "tf_files/retrained_graph.pb" #local
+#        label_file = "tf_files/retrained_labels.txt" #local
         input_height = 224
         input_width = 224
         input_mean = 128
@@ -85,7 +83,7 @@ def index():
 
 
         graph = load_graph(model_file)
-        t = read_tensor_from_image_file(file_name,
+        t = read_tensor_from_image_file(file_location,
                                         input_height=input_height,
                                         input_width=input_width,
                                         input_mean=input_mean,
@@ -106,19 +104,15 @@ def index():
         top_k = results.argsort()[-5:][::-1]
         labels = load_labels(label_file)
 
-        #print('\nEvaluation time (1-image): {:.3f}s\n'.format(end-start))
-        #template = "{} (score={:0.5f})"
-        dlabels = []
+        dlabels = [] # store results of classification in an array
         dresults = []
         for i in top_k:
-          #print(template.format(labels[i], results[i]))
           dlabels.append(labels[i])
           dresults.append(results[i])
-          if i > 0:
-              break
 
-        session['dlabel'] = dlabels[0]
-        session['dresult'] = int(dresults[0]*100)
+
+        session['dlabel'] = dlabels[0]  #store top result in session
+        session['dresult'] = int(dresults[0]*100) #store top result certainty afer convertin to percentage
 
         return redirect(url_for("index"))
 
