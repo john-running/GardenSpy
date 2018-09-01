@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
 <head>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
@@ -5,10 +7,21 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </head>
 <body>
-<h1>Dandelion?</h1>
+{%if session['filename'] == ""%}
+<h1>What's in my back yard?</h1>
+<p>Upload a picture of something from your back yard, and Tensorflow will tell you what it is:</p>
+{%else%}
+<h1>Here is the image you uploaded:</h1>
+  <img src="static/{{session['filename']}}">
+  <br>
+  <br>
+Tensorflow thinks you uploaded a picture of a {{session['dlabel']}} with {{session['dresult']}}% certainty.
+Try again?<br><br>
+{%endif%}
 <form  method="POST" enctype="multipart/form-data">
     {{form.image}}
-   <br>
+   <br><br>
     {{ form.submit() }}
 </form>
 </body>
+</html>

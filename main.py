@@ -17,6 +17,9 @@ from flask_wtf import FlaskForm
 from wtforms import (SubmitField,FileField)
 from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
+from PIL import Image
+
+#UPLOAD_FOLDER = '/home/sidearmjohnny/mysite/static/'
 UPLOAD_FOLDER = 'static/'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
@@ -56,11 +59,23 @@ def index():
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         session['filename'] = filename
-
-
         file_name = UPLOAD_FOLDER + filename
+        '''
+        resize image here
+        '''
+        basewidth = 224
+        img = Image.open(file_name)
+        wpercent = (basewidth/float(img.size[0]))
+        hsize = int((float(img.size[1])*float(wpercent)))
+        img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+        img.save(file_name)
+
+
+#        model_file = "/home/sidearmjohnny/mysite/tf_files/retrained_graph.pb"
+#        label_file = "/home/sidearmjohnny/mysite/tf_files/retrained_labels.txt"
         model_file = "tf_files/retrained_graph.pb"
         label_file = "tf_files/retrained_labels.txt"
+
         input_height = 224
         input_width = 224
         input_mean = 128
@@ -105,16 +120,10 @@ def index():
         session['dlabel'] = dlabels[0]
         session['dresult'] = int(dresults[0]*100)
 
-
-        return redirect(url_for("thankyou"))
+        return redirect(url_for("index"))
 
     return render_template('home.html', form=form)
 
-
-@app.route('/thankyou')
-def thankyou():
-
-    return render_template('thankyou.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

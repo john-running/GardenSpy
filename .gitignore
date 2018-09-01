@@ -1,6 +1,8 @@
 **/*.pyc
 .idea/
 **/*~
+static/
+tf_files/
 gradle*
 libs/
 local.properties
