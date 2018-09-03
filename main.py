@@ -22,25 +22,41 @@ imports for web app
 
 import os #required to save uploaded files
 from flask import Flask, render_template, session, redirect, url_for, flash,request
-from scripts.label_image import load_graph,read_tensor_from_image_file,load_labels,ImageFileRequired
+from scripts.label_image import load_graph,read_tensor_from_image_file,load_labels
 from flask_wtf import FlaskForm
 from wtforms import (SubmitField,FileField, Form, BooleanField, StringField, validators)
 from wtforms.validators import DataRequired
 from werkzeug.utils import secure_filename
+import imghdr #to do image upload validation
+
+class ImageFileRequired(object):
+    """
+    Validates that an uploaded file from a flask_wtf FileField is, in fact an
+    image.  Better than checking the file extension, examines the header of
+    the image using Python's built in imghdr module.
+    """
+
+    def __init__(self, message=None):
+        self.message = message
+
+    def __call__(self, form, field):
+        if field.data is None or imghdr.what('unused', field.data.read()) is None:
+            message = self.message or 'An image file is required'
+            raise validators.StopValidation(message)
+
+        field.data.seek(0)
+
 
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'mysecretkey'
-origi
+
+
 
 class ImageForm(FlaskForm):
-    '''
-    This general class gets a lot of form about puppies.
-    Mainly a way to go through many of the WTForms Fields.
-    '''
-    image = FileField('Image File', validators=[DataRequired(), ImageFileRequired()])
 
+    image = FileField('Image File', validators=[DataRequired(), ImageFileRequired()])
     submit = SubmitField('Submit')
 
 
@@ -51,6 +67,7 @@ def index():
     form = ImageForm()
 
     if form.validate_on_submit(): # if user submits form
+        session['submitted'] = True
         file = request.files['image']
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename)) # save original file to the server
